@@ -1,0 +1,50 @@
+# Operating System Files
+*.DS_Store
+Thumbs.db
+Thumbs.db
+*.sw?
+.#*
+*#
+*~
+*.sublime-*
+*.bak
+*.patch
+*.diff
+*.err
+*.orig
+*.log
+*.rej
+*.swo
+*.swp
+*.vi
+
+# Build Artifacts
+.gradle
+build
+target
+bin
+out
+dependency-reduced-pom.xml
+
+# IDE
+*.iml
+*.ipr
+*.iws
+*.idea
+.classpath
+.project
+.settings
+.vs
+
+#FE
+*.sass-cache
+*.tmp.html
+*.dump
+node_modules
+
+# Compressed Files
+*.jar
+*.war
+*.zip
+*.rar
+*.tar.gz

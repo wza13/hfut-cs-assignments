@@ -1,0 +1,34 @@
+.container {
+  margin-top: 100px;
+}
+
+.row {
+  margin-bottom: 20px;
+}
+
+.form-control {
+  min-height: 200px;
+}
+
+.btn-row {
+  justify-content: center;
+}
+
+.btn {
+  width: 100%;
+  height: 60px;
+  font-size: 1.3rem;
+}
+
+.col-middle {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.col-left {
+  padding-right: 0;
+}
+
+.col-left {
+  padding-left: 0;
+}
