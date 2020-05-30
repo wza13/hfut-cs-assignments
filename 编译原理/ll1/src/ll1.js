@@ -12,7 +12,6 @@ function startLL1(rules, inputString) {
     }
 
     const [nonTerminals, terminals] = initToken();
-    terminals.add('#');
     const nullables = getNullables();
     const leftString = inputString.split('');
     const stack = [rules[0][0]];
@@ -69,6 +68,7 @@ function startLL1(rules, inputString) {
     function initToken() {
         let nonTerminals = new Set();
         let terminals = new Set();
+        terminals.add('#');
         for (const rule of rules) {
             nonTerminals.add(getLeftHand(rule));
         }
@@ -152,7 +152,7 @@ function startLL1(rules, inputString) {
             size = getSetsTotalSize(follow);
             for (const rule of rules) {
                 const nonTerminal = getLeftHand(rule);
-                let temp = copySet(follow[nonTerminal]);
+                let temp = new Set(follow[nonTerminal]);
                 for (const token of getRightHand(rule).split('').reverse()) {
                     if (terminals.has(token)) {
                         temp = new Set([token]);
@@ -160,7 +160,7 @@ function startLL1(rules, inputString) {
                     else {
                         appendSet(follow[token], temp);
                         if (nullables.has(token)) appendSet(temp, first[token]);
-                        else temp = copySet(first[token]);
+                        else temp = new Set(first[token]);
                     }
                 }
             }
@@ -291,11 +291,4 @@ function startLL1(rules, inputString) {
     function appendSet(setA, setB) {
         setB.forEach(item => {setA.add(item)});
     }
-
-    function copySet(set) {
-        const newSet = new Set();
-        set.forEach(item => {newSet.add(item)});
-        return newSet;
-    }
-
 }

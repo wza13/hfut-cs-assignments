@@ -85,7 +85,7 @@
             <div class="input-group-prepend">
               <span class="input-group-text">待识别的符号串</span>
             </div>
-            <textarea class="form-control" aria-label="LL1文法规则" v-model="inputString">{{inputString}}</textarea>
+            <textarea class="form-control" aria-label="待识别的符号串" v-model="inputString">{{inputString}}</textarea>
           </div>
         </div>
 
@@ -132,7 +132,6 @@
     }
 
     const [nonTerminals, terminals] = initToken();
-    terminals.add('#');
     const nullables = getNullables();
     const leftString = inputString.split('');
     const stack = [rules[0][0]];
@@ -173,6 +172,7 @@
     function initToken() {
       let nonTerminals = new Set();
       let terminals = new Set();
+      terminals.add('#');
       for (const rule of rules) {
         nonTerminals.add(getLeftHand(rule));
       }
@@ -256,7 +256,7 @@
         size = getSetsTotalSize(follow);
         for (const rule of rules) {
           const nonTerminal = getLeftHand(rule);
-          let temp = copySet(follow[nonTerminal]);
+          let temp = new Set(follow[nonTerminal]);
           for (const token of getRightHand(rule).split('').reverse()) {
             if (terminals.has(token)) {
               temp = new Set([token]);
@@ -264,7 +264,7 @@
             else {
               appendSet(follow[token], temp);
               if (nullables.has(token)) appendSet(temp, first[token]);
-              else temp = copySet(first[token]);
+              else temp = new Set(first[token]);
             }
           }
         }
@@ -380,12 +380,6 @@
 
     function appendSet(setA, setB) {
       setB.forEach(item => { setA.add(item) });
-    }
-
-    function copySet(set) {
-      const newSet = new Set();
-      set.forEach(item => { newSet.add(item) });
-      return newSet;
     }
 
   }

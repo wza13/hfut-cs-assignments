@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LL(1)文法分析</title>
+  <title>LR(0)文法分析</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
     integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
   <link rel="stylesheet" type="text/css" href="../../utils/index.css" />
@@ -23,7 +23,7 @@
             </button>
           </div>
           <div class="modal-body">
-            提示：<br>1. 可推出 epsilon 写法为：N-> <br>2. 区分大小写 <br>3. 一条规则一行
+            提示：<br>1. 可推出 epsilon 写法为：N-> <br>2. 区分大小写 <br>3. 一条规则一行 <br>4. 不需要额外添加第 0 条规则（N'->N）
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -38,9 +38,9 @@
         <div class="col">
           <div class="input-group">
             <div class="input-group-prepend">
-              <span class="input-group-text">LL1文法规则</span>
+              <span class="input-group-text">LR0文法规则</span>
             </div>
-            <textarea class="form-control" aria-label="LL1文法规则" v-model="rules">{{rules}}</textarea>
+            <textarea class="form-control" aria-label="LR0文法规则" v-model="rules">{{rules}}</textarea>
           </div>
         </div>
 
@@ -66,17 +66,17 @@
           <table class="table">
             <thead>
               <tr>
-                <th scope="col">分析栈</th>
+                <th scope="col">状态栈</th>
+                <th scope="col">符号栈</th>
                 <th scope="col">剩余串</th>
-                <th scope="col">所用产生式</th>
                 <th scope="col">动作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="step in steps">
-                <td>{{step.stack}}</td>
+                <td>{{step.statusStack}}</td>
+                <td>{{step.tokenStack}}</td>
                 <td>{{step.leftString}}</td>
-                <td>{{step.usedRule}}</td>
                 <td>{{step.action}}</td>
               </tr>
             </tbody>
@@ -89,32 +89,20 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-<script src="./ll1.js"></script>
+<script src="./lr0.js"></script>
 <script src="../../utils/vue.js"></script>
 <script>
   const app = new Vue({
     el: '#app',
     data: {
       rules:
-// 默认用例
-`E->TG
-G->+TG
-G->-TG
-G->
-T->FS
-S->*FS
-S->/FS
-S->
-F->(E)
-F->i`,
-// // 测试用例
-// `Z->d
-// Z->XYZ
-// Y->c
-// Y->
-// X->Y
-// X->a`,
-      inputString: 'i+i*i',
+`E->aA
+E->bB
+A->cA
+A->d
+B->cB
+B->d`,
+      inputString: 'accd',
       isAccepted: null,
       steps: [],
       errorMsg: '',
@@ -134,7 +122,7 @@ F->i`,
         while (rules[rules.length - 1] === '') rules.pop();
         if (!rules.length || !inputString) return;
 
-        const [errorMsg, steps] = startLL1(rules, inputString);
+        const [errorMsg, steps] = startLR0(rules, inputString);
         console.log(errorMsg);
         this.steps = steps;
         if (errorMsg === undefined) {
@@ -143,9 +131,9 @@ F->i`,
         else if (errorMsg === 'fail') {
           this.isAccepted = false;
         }
-        else if (errorMsg === 'format' || errorMsg === 'notLL1') {
+        else if (errorMsg === 'format' || errorMsg === 'notLR0') {
           this.isAccepted = null;
-          this.errorMsg = errorMsg === 'format' ? '输入格式错误' : '非LL(1)文法'
+          this.errorMsg = errorMsg === 'format' ? '输入格式错误' : '非LR(0)文法'
           $('#exampleModal').modal('show');
         }
       }

@@ -36,7 +36,7 @@ dependency-reduced-pom.xml
 .settings
 .vs
 
-#FE
+# FE
 *.sass-cache
 *.tmp.html
 *.dump
