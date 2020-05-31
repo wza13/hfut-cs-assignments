@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LR(1)文法分析</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <style type="text/css">
+    .container {
+      margin-top: 100px;
+    }
+
+    .row {
+      margin-bottom: 20px;
+    }
+
+    .form-control {
+      min-height: 200px;
+    }
+
+    .btn-row {
+      justify-content: center;
+    }
+
+    .btn {
+      width: 100%;
+      height: 60px;
+      font-size: 1.3rem;
+    }
+
+    .col-middle {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .col-left {
+      padding-right: 0;
+    }
+
+    .col-left {
+      padding-left: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">{{errorMsg}}</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            提示：<br>1. 可推出 epsilon 写法为：N-> <br>2. 区分大小写 <br>3. 一条规则一行 <br>4. 不需要额外添加第 0 条规则（N'->N）
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+
+        <div class="col">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">LR1文法规则</span>
+            </div>
+            <textarea class="form-control" aria-label="LR1文法规则" v-model="rules">{{rules}}</textarea>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">待识别的符号串</span>
+            </div>
+            <textarea class="form-control" aria-label="待识别的符号串" v-model="inputString">{{inputString}}</textarea>
+          </div>
+        </div>
+
+      </div>
+      <div class="row btn-row">
+
+        <div class="col">
+          <button type="button" class="btn" :class="btnState" @click="start">分析</button>
+        </div>
+
+      </div>
+      <div class="row">
+        <div class="col">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">状态栈</th>
+                <th scope="col">符号栈</th>
+                <th scope="col">剩余串</th>
+                <th scope="col">动作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="step in steps">
+                <td>{{step.statusStack}}</td>
+                <td>{{step.tokenStack}}</td>
+                <td>{{step.leftString}}</td>
+                <td>{{step.action}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+</body>
+
+<script>
+
+  function getLeftHand(rule) {
+    return rule.substring(0, rule.indexOf('->'));
+  }
+
+  function getRightHand(rule) {
+    return rule.substring(rule.indexOf('->') + 2);
+  }
+
+  function checkRules(rules) {
+    return rules.findIndex(rule => !rule.includes('->')) !== -1 ?
+      false : true;
+  }
+
+  function getSetsTotalSize(sets) {
+    return Object.values(sets)
+      .map(set => set.size)
+      .reduce((prev, curr) => prev + curr);
+  }
+
+  function appendSet(setA, setB) {
+    setB.forEach(item => { setA.add(item) });
+  }
+
+  function initToken(rules) {
+    let nonTerminals = new Set();
+    let terminals = new Set();
+    terminals.add('#');
+    for (const rule of rules) {
+      nonTerminals.add(getLeftHand(rule));
+    }
+    for (const rule of rules) {
+      getRightHand(rule).split('').forEach(token => {
+        if (!nonTerminals.has(token))
+          terminals.add(token);
+      })
+    }
+
+    return [nonTerminals, terminals]
+  }
+
+  function getNullables(rules) {
+    let nullables = new Set();
+    let size = 0;
+    let newSize = 0;
+    do {
+      size = nullables.size;
+      for (const rule of rules) {
+        const nonTerminal = getLeftHand(rule);
+        const rightHand = getRightHand(rule)
+        if (rightHand === '') nullables.add(nonTerminal);
+        else {
+          let nullable = true;
+          for (const token of rightHand.split('')) {
+            if (!nullables.has(token)) {
+              nullable = false;
+              break;
+            }
+          }
+          if (nullable) nullables.add(nonTerminal);
+        }
+      }
+      newSize = nullables.size;
+    } while (newSize !== size)
+
+    return nullables;
+  }
+
+  function getFirst(rules, nonTerminals, terminals, nullables) {
+    const first = {};
+    for (const nonTerminal of nonTerminals) {
+      first[nonTerminal] = new Set();
+    }
+    let size = 0;
+    let newSize = 0;
+    do {
+      size = getSetsTotalSize(first);
+      for (const rule of rules) {
+        const nonTerminal = getLeftHand(rule);
+        for (const token of getRightHand(rule).split('')) {
+          if (terminals.has(token)) {
+            first[nonTerminal].add(token);
+            break;
+          }
+          else {
+            appendSet(first[nonTerminal], first[token])
+            if (!nullables.has(token)) break;
+          }
+        }
+      }
+      newSize = getSetsTotalSize(first);
+    } while (newSize !== size)
+
+    return first;
+  }
+
+  function getFollow(rules, nonTerminals, terminals, nullables, first) {
+    const follow = {};
+    for (const nonTerminal of nonTerminals) {
+      follow[nonTerminal] = new Set();
+    }
+    follow[rules[0][0]].add('#');
+    let size = 0;
+    let newSize = 0;
+    do {
+      size = getSetsTotalSize(follow);
+      for (const rule of rules) {
+        const nonTerminal = getLeftHand(rule);
+        let temp = new Set(follow[nonTerminal]);
+        for (const token of getRightHand(rule).split('').reverse()) {
+          if (terminals.has(token)) {
+            temp = new Set([token]);
+          }
+          else {
+            appendSet(follow[token], temp);
+            if (nullables.has(token)) appendSet(temp, first[token]);
+            else temp = new Set(first[token]);
+          }
+        }
+      }
+      newSize = getSetsTotalSize(follow);
+    } while (newSize !== size)
+
+    return follow;
+  }
+
+  function addDotToRule(rule) {
+    const startIndex = rule.indexOf('->') + 2;
+    return rule.substring(0, startIndex) +
+      '`' + rule.substring(startIndex);
+  }
+
+  function getTokenAfterDot(item) {
+    return item[item.indexOf('`') + 1] || '';
+  }
+  function getTokenAfterAfterDot(item) {
+    return item[item.indexOf('`') + 2] || '';
+  }
+
+  function moveDotToNext(item) {
+    const index = item.indexOf('`');
+    if (index === item.length - 1) return item;
+    return `${item.substring(0, index)}${item.charAt(index + 1)}` +
+      `\`${item.substring(index + 2)}`;
+  }
+
+  function startLR1(rules, inputString) {
+    if (inputString[inputString.length - 1] !== '#')
+      inputString = inputString + '#';
+    if (!checkRules(rules)) {
+
+      return ['format', []];
+    }
+
+    const originStart = rules[0][0];
+    rules.unshift(`${originStart}'->${originStart}`);
+
+    const [nonTerminals, terminals] = initToken(rules);
+    const nullables = getNullables(rules);
+    const leftString = inputString.split('');
+    const statusStack = ['0'];
+    const tokenStack = ['#'];
+    const steps = [];
+
+    const first = getFirst(rules, nonTerminals, terminals, nullables);
+    const follow = getFollow(rules, nonTerminals, terminals, nullables, first);
+
+    const [actionTable, gotoTable, itemSets, hasConflicts] = getTable();
+    if (hasConflicts)
+      return ['notLR1', steps];
+
+    while (true) {
+      steps.push({
+        statusStack: statusStack.join(' '),
+        tokenStack: tokenStack.join(''),
+        leftString: leftString.join(''),
+      });
+
+      const token = leftString[0];
+      const status = statusStack[statusStack.length - 1];
+      if (actionTable[status][token] === undefined) {
+        steps[steps.length - 1].action = '分析失败';
+        return ['fail', steps];
+      }
+      else if (actionTable[status][token][0] === 's') {
+        leftString.shift();
+        tokenStack.push(token);
+        const pushingStatus = actionTable[status][token].substring(1);
+        statusStack.push(pushingStatus);
+        steps[steps.length - 1].action = `移进，状态${pushingStatus}入栈`;
+      }
+      else if (actionTable[status][token][0] === 'r') {
+        const reduceRuleIndex =
+          Number(actionTable[status][token].substring(1));
+        const reduction = getLeftHand(rules[reduceRuleIndex]);
+        const popLength = getRightHand(rules[reduceRuleIndex]).length;
+        for (let i = 0; i < popLength; ++i) {
+          statusStack.pop();
+          tokenStack.pop();
+        }
+        tokenStack.push(reduction);
+        const currStatus = statusStack[statusStack.length - 1];
+        const pushingStatus = gotoTable[currStatus][reduction];
+        if (pushingStatus === undefined) {
+          steps[steps.length - 1].action = '分析失败';
+          return ['fail', steps];
+        }
+        statusStack.push(pushingStatus);
+        steps[steps.length - 1].action = `规约，状态${pushingStatus}入栈`;
+      }
+      else /* if (actionTable[status][token].toLowerCase() === 'accept') */ {
+        steps[steps.length - 1].action = '分析成功';
+        return [undefined, steps];
+      }
+    }
+
+
+    function getTable() {
+      let hasConflicts = false;
+      const originNonTerminals = new Set(nonTerminals);
+      originNonTerminals.delete(`${originStart}'`);
+
+      const actionTable = {};
+      const gotoTable = {};
+      const itemSets = [];
+      const itemSetQueue = [];
+
+      const firstItemSet = {
+        id: '0',
+        items: closure(new Set([{
+          string: addDotToRule(rules[0]),
+          followed: new Set(['#']),
+        }])),
+      };
+      itemSets.push(firstItemSet);
+      itemSetQueue.push(firstItemSet);
+
+      while (itemSetQueue.length) {
+        const currItemSet = itemSetQueue.shift();
+        if (actionTable[currItemSet.id] === undefined)
+          actionTable[currItemSet.id] = {};
+        if (gotoTable[currItemSet.id] === undefined)
+          gotoTable[currItemSet.id] = {};
+
+        let pointingItemSet = null;
+        for (const terminal of terminals) {
+          pointingItemSet = go(currItemSet, terminal);
+          /* shift */
+          if (pointingItemSet)
+            actionTable[currItemSet.id][terminal] =
+              `s${pointingItemSet.id}`;
+        }
+
+        for (const nonTerminal of originNonTerminals) {
+          pointingItemSet = go(currItemSet, nonTerminal);
+          /* goto */
+          if (pointingItemSet)
+            gotoTable[currItemSet.id][nonTerminal] =
+              pointingItemSet.id;
+        }
+        for (item of currItemSet.items) {
+          if (item.string[item.string.length - 1] === '`') {
+            const reductionRule = rules.findIndex(rule =>
+              rule === item.string.substring(0, item.string.length - 1));
+            /* reduce */
+            if (reductionRule !== 0) {
+              for (const followed of item.followed) {
+                if (actionTable[currItemSet.id][followed])
+                  hasConflicts = true;
+                else actionTable[currItemSet.id][followed] =
+                  `r${reductionRule}`;
+              }
+            }
+            /* accept */
+            else actionTable[currItemSet.id]['#'] = 'accept';
+          }
+        }
+      }
+
+      return [actionTable, gotoTable, itemSets, hasConflicts];
+
+
+      function go(itemSet, token) {
+        let tempSet = new Set();
+        for (const item of itemSet.items) {
+          if (getTokenAfterDot(item.string) === token)
+            tempSet.add({
+              string: moveDotToNext(item.string),
+              followed: item.followed,
+            });
+        }
+
+        if (!tempSet.size) return null;
+        tempSet = closure(tempSet);
+        const existedSetId = findSameSet(tempSet);
+        if (existedSetId === -1) {
+          const newItemSet = {
+            id: String(itemSets.length),
+            items: tempSet,
+          };
+          itemSets.push(newItemSet);
+          itemSetQueue.push(newItemSet);
+
+          return newItemSet;
+        }
+        else return itemSets.find(itemSet => itemSet.id === existedSetId);
+      }
+
+      function closure(items) {
+        let size = 0;
+        let newSize = 0;
+        do {
+          size = items.size;
+          const _items = new Set(items);
+          for (const item of items) {
+            const tokenAfterDot = getTokenAfterDot(item.string);
+            const tokenAfterAfterDot = getTokenAfterAfterDot(item.string);
+            if (nonTerminals.has(tokenAfterDot)) {
+              for (const rule of rules) {
+                if (rule[0] === tokenAfterDot)
+                  addNewItem(
+                    addDotToRule(rule),
+                    getFollowed(tokenAfterAfterDot, item.followed),
+                    _items
+                  );
+              }
+            }
+          }
+          items = _items;
+          newSize = items.size;
+        } while (size !== newSize)
+
+        return items;
+      }
+
+      function getFollowed(tokenAfterAfterDot, originFollowed) {
+        if (tokenAfterAfterDot === '') return new Set(originFollowed);
+        if (terminals.has(tokenAfterAfterDot))
+          return new Set([tokenAfterAfterDot]);
+        const temp = new Set(first[tokenAfterAfterDot]);
+        if (nullables.has(tokenAfterAfterDot)) appendSet(temp, originFollowed);
+        return temp;
+      }
+
+      function addNewItem(string, followed, items) {
+        for (const item of items) {
+          if (item.string === string) {
+            appendSet(item.followed, followed);
+            return;
+          }
+        }
+        items.add({ string, followed });
+      }
+
+      function findSameSet(items) {
+        const _items = mergeStringAndFollowed(items);
+        for (const itemSet of itemSets) {
+          const _difference = mergeStringAndFollowed(itemSet.items);
+          for (const elem of _items) {
+            if (_difference.has(elem)) {
+              _difference.delete(elem)
+            } else {
+              _difference.add(elem)
+            }
+          }
+          if (_difference.size === 0) return itemSet.id;
+        }
+        return -1;
+
+        function mergeStringAndFollowed(items) {
+          const temp = new Set();
+          items.forEach(item => temp.add(
+            `${item.string}${Array.from(item.followed).sort().join('')}`
+          ));
+          return temp;
+        }
+      }
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.slim.min.js"
+  integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+  integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js"
+  integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data: {
+      rules:
+`S->BB
+B->aB
+B->b`,
+      inputString: 'aabb',
+      isAccepted: null,
+      steps: [],
+      errorMsg: '',
+    },
+
+    computed: {
+      btnState() {
+        return this.isAccepted ? 'btn-success' :
+          (this.isAccepted === null ? 'btn-primary' : 'btn-danger');
+      },
+    },
+
+    methods: {
+      start() {
+        const rules = this.rules.split('\n').map(rule => rule.replace(/\s+/g, ''));
+        const inputString = this.inputString.trim();
+        while (rules[rules.length - 1] === '') rules.pop();
+        if (!rules.length || !inputString) return;
+
+        const [errorMsg, steps] = startLR1(rules, inputString);
+        console.log(errorMsg);
+        this.steps = steps;
+        if (errorMsg === undefined) {
+          this.isAccepted = true;
+        }
+        else if (errorMsg === 'fail') {
+          this.isAccepted = false;
+        }
+        else if (errorMsg === 'format' || errorMsg === 'notLR1') {
+          this.isAccepted = null;
+          this.errorMsg = errorMsg === 'format' ? '输入格式错误' : '非LR(1)文法'
+          $('#exampleModal').modal('show');
+        }
+      }
+    }
+  });
+</script>
+
+</html>

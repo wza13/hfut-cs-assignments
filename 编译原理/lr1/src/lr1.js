@@ -3,10 +3,10 @@
  * @param {String} inputString
  * @author yzj
  */
-function startLL1(rules, inputString) {
+function startLR1(rules, inputString) {
     if (inputString[inputString.length - 1] !== '#')
         inputString = inputString + '#';
-    if (!checkRules()) {
+    if (!checkRules(rules)) {
 
         return ['format', []];
     }
@@ -14,8 +14,8 @@ function startLL1(rules, inputString) {
     const originStart = rules[0][0];
     rules.unshift(`${originStart}'->${originStart}`);
 
-    const [nonTerminals, terminals] = initToken();
-    const nullables = getNullables();
+    const [nonTerminals, terminals] = initToken(rules);
+    const nullables = getNullables(rules);
     const leftString = inputString.split('');
     const statusStack = ['0'];
     const tokenStack = ['#'];
@@ -27,14 +27,12 @@ function startLL1(rules, inputString) {
     // console.log(nullables);
     // return [undefined, steps];
 
-    const first = getFirst();
-    const follow = getFollow();
-    const firstS = getFirstS();
+    const first = getFirst(rules, nonTerminals, terminals, nullables);
+    const follow = getFollow(rules, nonTerminals, terminals, nullables, first);
 
     // // test
     // console.dir(first);
     // console.dir(follow);
-    // console.dir(firstS);
     // return [undefined, steps];
 
     const [actionTable, gotoTable, itemSets, hasConflicts] = getTable();
@@ -48,7 +46,7 @@ function startLL1(rules, inputString) {
     // console.dir(actionTable);
     // console.log('goto表')
     // console.dir(gotoTable);
-    // console.log('是否有移进规约冲突', hasConflicts);
+    // console.log('是否有冲突', hasConflicts);
     // return;
 
     while (true) {
@@ -97,149 +95,20 @@ function startLL1(rules, inputString) {
     }
 
 
-    /**
-     * @returns {[Array, Array]} [nonTerminals, terminals]
-     */
-    function initToken() {
-        let nonTerminals = new Set();
-        let terminals = new Set();
-        for (const rule of rules) {
-            nonTerminals.add(getLeftHand(rule));
-        }
-        for (const rule of rules) {
-            getRightHand(rule).split('').forEach(token => {
-                if (!nonTerminals.has(token))
-                    terminals.add(token);
-            })
-        }
-
-        return [nonTerminals, terminals]
-    }
-
-
-    function getNullables() {
-        let nullables = new Set();
-        let size = 0;
-        let newSize = 0;
-        do {
-            size = nullables.size;
-            for (const rule of rules) {
-                const nonTerminal = getLeftHand(rule);
-                const rightHand = getRightHand(rule)
-                if (rightHand === '') nullables.add(nonTerminal);
-                else {
-                    let nullable = true;
-                    for (const token of rightHand.split('')) {
-                        if (!nullables.has(token)) {
-                            nullable = false;
-                            break;
-                        }
-                    }
-                    if (nullable) nullables.add(nonTerminal);
-                }
-            }
-            newSize = nullables.size;
-        } while (newSize !== size)
-
-        return nullables;
-    }
-
-
-    function getFirst() {
-        const first = {};
-        for (const nonTerminal of nonTerminals) {
-            first[nonTerminal] = new Set();
-        }
-        let size = 0;
-        let newSize = 0;
-        do {
-            size = getSetsTotalSize(first);
-            for (const rule of rules) {
-                const nonTerminal = getLeftHand(rule);
-                for (const token of getRightHand(rule).split('')) {
-                    if (terminals.has(token)) {
-                        first[nonTerminal].add(token);
-                        break;
-                    }
-                    else {
-                        appendSet(first[nonTerminal], first[token])
-                        if (!nullables.has(token)) break;
-                    }
-                }
-            }
-            newSize = getSetsTotalSize(first);
-        } while (newSize !== size)
-
-        return first;
-    }
-
-
-    function getFollow() {
-        const follow = {};
-        for (const nonTerminal of nonTerminals) {
-            follow[nonTerminal] = new Set();
-        }
-        follow[rules[0][0]].add('#');
-        let size = 0;
-        let newSize = 0;
-        do {
-            size = getSetsTotalSize(follow);
-            for (const rule of rules) {
-                const nonTerminal = getLeftHand(rule);
-                let temp = new Set(follow[nonTerminal]);
-                for (const token of getRightHand(rule).split('').reverse()) {
-                    if (terminals.has(token)) {
-                        temp = new Set([token]);
-                    }
-                    else {
-                        appendSet(follow[token], temp);
-                        if (nullables.has(token)) appendSet(temp, first[token]);
-                        else temp = new Set(first[token]);
-                    }
-                }
-            }
-            newSize = getSetsTotalSize(follow);
-        } while (newSize !== size)
-
-        return follow;
-    }
-
-
-    function getFirstS() {
-        const firstS = {};
-        rules.forEach((rule, index) => {
-            firstS[index] = new Set();
-            let allRightHandTokenIsNullable = true;
-            for (const token of getRightHand(rule).split('')) {
-                if (terminals.has(token)) {
-                    firstS[index].add(token);
-                    allRightHandTokenIsNullable = false;
-                    break;
-                }
-                else {
-                    appendSet(firstS[index], first[token]);
-                    if (!nullables.has(token)) {
-                        allRightHandTokenIsNullable = false;
-                        break;
-                    }
-                }
-            }
-            if (allRightHandTokenIsNullable)
-                appendSet(firstS[index], follow[getLeftHand(rule)]);
-        });
-
-        return firstS;
-    }
-
-
     function getTable() {
         /* Use this char ` to represent the DOT MARK. */
         /* itemSet format:
             {
                 id: '0',
                 items (Set): {
-                    'A->B`C',
-                    'C->`a',
+                    {
+                        string: 'A->B`C',
+                        followed: Set{'#'}
+                    },
+                    {
+                        string: 'C->`a',
+                        followed: Set{'#', 'b'}
+                    },
                     ...
                 }
             }
@@ -255,7 +124,10 @@ function startLL1(rules, inputString) {
 
         const firstItemSet = {
             id: '0',
-            items: closure(addDotToRule(rules[0]))
+            items: closure(new Set([{
+                string: addDotToRule(rules[0]),
+                followed: new Set(['#']),
+            }])),
         };
         itemSets.push(firstItemSet);
         itemSetQueue.push(firstItemSet);
@@ -284,15 +156,15 @@ function startLL1(rules, inputString) {
                         pointingItemSet.id;
             }
             for (item of currItemSet.items) {
-                if (item[item.length - 1] === '`') {
+                if (item.string[item.string.length - 1] === '`') {
                     const reductionRule = rules.findIndex(rule =>
-                        rule === item.substring(0, item.length - 1));
+                        rule === item.string.substring(0, item.string.length - 1));
                     /* reduce */
                     if (reductionRule !== 0) {
-                        for (const terminal of terminals) {
-                            if (actionTable[currItemSet.id][terminal])
+                        for (const followed of item.followed) {
+                            if (actionTable[currItemSet.id][followed])
                                 hasConflicts = true;
-                            else actionTable[currItemSet.id][terminal] =
+                            else actionTable[currItemSet.id][followed] =
                                 `r${reductionRule}`;
                         }
                     }
@@ -308,8 +180,11 @@ function startLL1(rules, inputString) {
         function go(itemSet, token) {
             let tempSet = new Set();
             for (const item of itemSet.items) {
-                if (getTokenAfterDot(item) === token)
-                    tempSet.add(moveDotToNext(item));
+                if (getTokenAfterDot(item.string) === token)
+                    tempSet.add({
+                        string: moveDotToNext(item.string),
+                        followed: item.followed,
+                    });
             }
 
             if (!tempSet.size) return null;
@@ -329,60 +204,70 @@ function startLL1(rules, inputString) {
         }
 
         /**
-         * @param {String | Set<String>} item
-         * @returns {Set<String>}
+         * @param {Set} items Set of the defined format items.
+         * @returns {Set}
          */
-        function closure(item) {
-            let _item = item;
-            if (typeof(item) === 'string') {
-                _item = new Set([item]);
-            }
+        function closure(items) {
             let size = 0;
             let newSize = 0;
             do {
-                size = _item.size;
-                const __item = new Set(_item);
-                for (const item of _item) {
-                    const tokenAfterDot = getTokenAfterDot(item);
+                size = items.size;
+                const _items = new Set(items);
+                for (const item of items) {
+                    const tokenAfterDot = getTokenAfterDot(item.string);
+                    const tokenAfterAfterDot = getTokenAfterAfterDot(item.string);
                     if (nonTerminals.has(tokenAfterDot)) {
                         for (const rule of rules) {
                             if (rule[0] === tokenAfterDot)
-                                __item.add(addDotToRule(rule))
+                                addNewItem(
+                                    addDotToRule(rule),
+                                    getFollowed(tokenAfterAfterDot, item.followed),
+                                    _items
+                                );
                         }
                     }
                 }
-                _item = __item;
-                newSize = _item.size;
+                items = _items;
+                newSize = items.size;
             } while (size !== newSize)
 
-            return _item;
+            return items;
         }
 
-        function addDotToRule(rule) {
-            const startIndex = rule.indexOf('->') + 2;
-            return rule.substring(0, startIndex) +
-                '`' + rule.substring(startIndex);
-        }
-
-        function getTokenAfterDot(item) {
-            return item[item.indexOf('`') + 1] || '';
-        }
-
-        function moveDotToNext(item) {
-            const index = item.indexOf('`');
-            if (index === item.length - 1) return item;
-            return `${item.substring(0, index)}${item.charAt(index + 1)}` +
-                `\`${item.substring(index + 2)}`;
+        function getFollowed(tokenAfterAfterDot, originFollowed) {
+            if (tokenAfterAfterDot === '') return new Set(originFollowed);
+            if (terminals.has(tokenAfterAfterDot))
+                return new Set([tokenAfterAfterDot]);
+            const temp = new Set(first[tokenAfterAfterDot]);
+            if (nullables.has(tokenAfterAfterDot)) appendSet(temp, originFollowed);
+            return temp;
         }
 
         /**
-         * @param {Set<String>} items
+         * @param {String} string
+         * @param {Set} followed
+         * @param {Set} items
+         */
+        function addNewItem(string, followed, items) {
+            for (const item of items) {
+                if (item.string === string) {
+                    appendSet(item.followed, followed);
+                    return;
+                }
+            }
+            items.add({ string, followed });
+        }
+
+
+        /**
+         * @param {Set} items
          * @returns {number} itemSet id
          */
         function findSameSet(items) {
+            const _items = mergeStringAndFollowed(items);
             for (const itemSet of itemSets) {
-                const _difference = new Set(itemSet.items);
-                for (const elem of items) {
+                const _difference = mergeStringAndFollowed(itemSet.items);
+                for (const elem of _items) {
                     if (_difference.has(elem)) {
                         _difference.delete(elem)
                     } else {
@@ -392,31 +277,14 @@ function startLL1(rules, inputString) {
                 if (_difference.size === 0) return itemSet.id;
             }
             return -1;
+
+            function mergeStringAndFollowed(items) {
+                const temp = new Set();
+                items.forEach(item => temp.add(
+                    `${item.string}${Array.from(item.followed).sort().join('')}`
+                ));
+                return temp;
+            }
         }
-
     }
-
-
-    function getLeftHand(rule) {
-        return rule.substring(0, rule.indexOf('->'));
-    }
-    function getRightHand(rule) {
-        return rule.substring(rule.indexOf('->') + 2);
-    }
-
-    function checkRules() {
-        return rules.findIndex(rule => !rule.includes('->')) !== -1 ?
-            false : true;
-    }
-
-    function getSetsTotalSize(sets) {
-        return Object.values(sets)
-            .map(set => set.size)
-            .reduce((prev, curr) => prev + curr);
-    }
-
-    function appendSet(setA, setB) {
-        setB.forEach(item => {setA.add(item)});
-    }
-
 }
