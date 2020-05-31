@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>词法分析</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <style type="text/css">
+    .container {
+      margin-top: 100px;
+    }
+
+    .row {
+      margin-bottom: 20px;
+    }
+
+    .form-control {
+      min-height: 200px;
+    }
+
+    .btn-row {
+      justify-content: center;
+    }
+
+    .btn {
+      width: 100%;
+      height: 60px;
+      font-size: 1.3rem;
+    }
+
+    .col-middle {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .col-left {
+      padding-right: 0;
+    }
+
+    .col-left {
+      padding-left: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+
+    <div class="container">
+      <div class="row">
+
+        <div class="col">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">关键字<br>(使用空格与换行进行分隔)</span>
+            </div>
+            <textarea class="form-control" aria-label="关键字" v-model="keywords">{{keywords}}</textarea>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text">输入程序</span>
+            </div>
+            <textarea class="form-control" aria-label="输入程序" v-model="input">{{input}}</textarea>
+          </div>
+        </div>
+
+      </div>
+      <div class="row btn-row">
+
+        <div class="col">
+          <button type="button" class="btn" :class="btnState" @click="start">分析</button>
+        </div>
+
+      </div>
+      <div class="row">
+        <div class="col">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">单词</th>
+                <th scope="col">二元序列</th>
+                <th scope="col">类型</th>
+                <th scope="col">位置（行，列）</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in results">
+                <td>{{item.token}}</td>
+                <td>{{item.sequence}}</td>
+                <td>{{item.type}}</td>
+                <td>{{item.position}}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+  function lexer(keywords, input) {
+    const results = [];
+
+    const types = ['ERROR', 'KEYWORD', 'SEPARATOR',
+      'ARITHMETIC_OP', 'RELATIONAL_OP', 'NUMBER', 'ID'];
+    const separators = new Set([',', ';', '(', ')', '[', ']']);
+    const arithmetic_ops = new Set(['+', '-', '*', '/']);
+    const relational_ops = new Set(['<', '<=', '=', '>', '>=', '<>']);
+    const ids = new Set();
+
+    const inString = input + '\0';
+    let bufferPointer = 0;
+    let row = 1;
+    let line = 1;
+    let ch = '';
+    let outToken = '';
+
+    while (true) {
+      getChar();
+      handleSpace();
+      if (isLetter()) analyzeWord();
+      else if (isDigit()) analyzeNumber();
+      else if (separators.has(ch) ||
+        arithmetic_ops.has(ch) ||
+        relational_ops.has(ch))
+        analyzePunctuation();
+      else if (ch === '\0') return results;
+      else {
+        outToken += ch;
+        log('ERROR');
+      }
+    }
+
+
+    function getChar() {
+      if (ch !== '\0') {
+        ch = inString[bufferPointer++];
+        ++line;
+      }
+    }
+
+    function handleSpace() {
+      while (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') {
+        if (ch === '\n') {
+          ++row;
+          line = 1;
+        }
+        if (ch === '\r') {
+          line = 1;
+        }
+        getChar();
+      }
+    }
+
+
+    function analyzeWord() {
+      while (isLetter() || isDigit()) {
+        outToken += ch;
+        getChar();
+      }
+      backtrack();
+      if (keywords.has(outToken)) log('KEYWORD');
+      else log('ID');
+    }
+
+    function analyzeNumber() {
+      while (isDigit()) {
+        outToken += ch;
+        getChar();
+      }
+      if (!isLetter()) {
+        backtrack();
+        log('NUMBER');
+
+        return;
+      }
+      while (isLetter() || isDigit()) {
+        outToken += ch;
+        getChar();
+      }
+      backtrack();
+      log('ERROR');
+    }
+
+    function analyzePunctuation() {
+      outToken += ch;
+      tempPunctuation = outToken;
+      getChar();
+      outToken += ch;
+      if (!separators.has(outToken) &&
+        !arithmetic_ops.has(outToken) &&
+        !relational_ops.has(outToken)
+      ) {
+        backtrack();
+        outToken = tempPunctuation;
+      }
+      if (separators.has(outToken)) log('SEPARATOR');
+      if (arithmetic_ops.has(outToken)) log('ARITHMETIC_OP');
+      if (relational_ops.has(outToken)) log('RELATIONAL_OP');
+    }
+
+    function backtrack() {
+      if (ch !== '\0') {
+        --bufferPointer;
+      }
+      --line;
+    }
+
+    function isLetter() { return /[a-zA-Z]/.test(ch); }
+
+    function isDigit() { return /[0-9]/.test(ch); }
+
+    function log(type) {
+      results.push({
+        token: outToken,
+        sequence: type === 'ERROR' ? 'ERROR' :
+          `(` +
+          `${Array.from(types).findIndex(item => item === type)}, ` +
+          `${outToken}` +
+          `)`,
+        type,
+        position: `(${row}, ${line - outToken.length})`
+      });
+      outToken = '';
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.4.1/dist/jquery.slim.min.js"
+  integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+  integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js"
+  integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+<script>
+  const app = new Vue({
+    el: '#app',
+    data: {
+      keywords: 'do end for if printf scanf then while',
+      input:
+`if i=0 then  n++;
+a <= 3b %);`,
+      results: [],
+      hasError: null,
+    },
+
+    computed: {
+      btnState() {
+        return this.hasError === false ? 'btn-success' :
+          (this.hasError === null ? 'btn-primary' : 'btn-danger');
+      },
+    },
+
+    methods: {
+      start() {
+        const keywords = this.keywords.replace(/\n+/g, ' ').trim().split(/\s+/g);
+        const input = this.input.trimEnd();
+        if (!keywords.length || !input) return;
+
+        const results = lexer(new Set(keywords), input);
+        let hasError = false;
+        for (const item of results) {
+          if (item.type === 'ERROR') {
+            hasError = true;
+            break;
+          }
+        }
+
+        this.results = results;
+        this.hasError = hasError;
+      }
+    }
+  });
+</script>
+
+</html>

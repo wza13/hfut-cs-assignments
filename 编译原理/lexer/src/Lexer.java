@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
 /**
  * A very limited Lexer.
  * @author yzj
@@ -51,7 +50,7 @@ public class Lexer {
     }
 
     public void start() {
-        while (bufferPointer < inString.length()) {
+        while (true) {
             getChar();
             handleSpace();
             if (isLetter()) analyzeWord();
@@ -128,8 +127,10 @@ public class Lexer {
     private void backtrack() {
         if (ch != '\0') {
             --bufferPointer;
-            --line;
         }
+        /* Put this expression out of the above if scope
+        to keep the last outToken's position correct. */
+        --line;
     }
 
     private boolean isLetter() {
@@ -141,11 +142,9 @@ public class Lexer {
     }
 
     private void getChar() {
-        if (bufferPointer < inString.length()) {
+        if (ch != '\0') {
             ch = inString.charAt(bufferPointer++);
             ++line;
-        } else {
-            ch = '\0';
         }
     }
 
