@@ -1,6 +1,6 @@
 /**
  * @param {Array<String>} rules
- * @returns {[Array, Array]} [nonTerminals, terminals]
+ * @returns {[Set<String>, Set<String>]} [nonTerminals, terminals]
  */
 function initToken(rules) {
     let nonTerminals = new Set();
