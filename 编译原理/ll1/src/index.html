@@ -33,8 +33,8 @@
     </div>
 
     <div class="container">
-      <div class="row">
 
+      <div class="row">
         <div class="col">
           <div class="input-group">
             <div class="input-group-prepend">
@@ -52,15 +52,14 @@
             <textarea class="form-control" aria-label="待识别的符号串" v-model="inputString">{{inputString}}</textarea>
           </div>
         </div>
-
       </div>
-      <div class="row btn-row">
 
+      <div class="row btn-row">
         <div class="col">
           <button type="button" class="btn" :class="btnState" @click="start">分析</button>
         </div>
-
       </div>
+
       <div class="row">
         <div class="col">
           <table class="table">
@@ -83,6 +82,28 @@
           </table>
         </div>
       </div>
+
+      <div class="row" v-if="nonTerminals && terminals && table">
+        <div class="col">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col"></th>
+                <th scope="col" v-for="terminal in terminals">{{terminal}}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="nonTerminal in Object.keys(table)">
+                <td><b>{{nonTerminal}}</b></td>
+                <td v-for="rule in table[nonTerminal]">
+                  {{rule}}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 </body>
@@ -120,6 +141,9 @@ F->i`,
       inputString: 'i+i*i',
       isAccepted: null,
       steps: [],
+      nonTerminals: null,
+      terminals: null,
+      table: null,
       errorMsg: '',
     },
 
@@ -137,16 +161,21 @@ F->i`,
         while (rules[rules.length - 1] === '') rules.pop();
         if (!rules.length || !inputString) return;
 
-        const [errorMsg, steps] = startLL1(rules, inputString);
-        console.log(errorMsg);
+        const [errorMsg, steps, info] = startLL1(rules, inputString);
         this.steps = steps;
+
         if (errorMsg === undefined) {
           this.isAccepted = true;
+          [this.nonTerminals, this.terminals, this.table, ...rest] = info;
         }
         else if (errorMsg === 'fail') {
           this.isAccepted = false;
+          [this.nonTerminals, this.terminals, this.table, ...rest] = info;
         }
         else if (errorMsg === 'format' || errorMsg === 'notLL1') {
+          this.nonTerminals = null;
+          this.terminals = null;
+          this.table = null;
           this.isAccepted = null;
           this.errorMsg = errorMsg === 'format' ? '输入格式错误' : '非LL(1)文法'
           $('#exampleModal').modal('show');

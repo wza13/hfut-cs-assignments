@@ -35,6 +35,7 @@ dependency-reduced-pom.xml
 .project
 .settings
 .vs
+.vscode
 
 # FE
 *.sass-cache

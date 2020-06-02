@@ -8,7 +8,7 @@ function startLL1(rules, inputString) {
         inputString = inputString + '#';
     if (!checkRules(rules)) {
 
-        return ['format', []];
+        return ['format', [], []];
     }
 
     const [nonTerminals, terminals] = initToken(rules);
@@ -21,7 +21,7 @@ function startLL1(rules, inputString) {
     // console.log(nonTerminals);
     // console.log(terminals);
     // console.log(nullables);
-    // return [undefined, steps];
+    // return [undefined, steps, []];
 
     const first = getFirst(rules, nonTerminals, terminals, nullables);
     const follow = getFollow(rules, nonTerminals, terminals, nullables, first);
@@ -33,11 +33,11 @@ function startLL1(rules, inputString) {
     // console.dir(follow);
     // console.dir(firstS);
     // console.dir(table);
-    // return [undefined, steps];
+    // return [undefined, steps, []];
 
     if (!checkTable()) {
 
-        return ['notLL1', []];
+        return ['notLL1', [], []];
     }
 
     pushStep(stack, leftString, -1, 'initialize');
@@ -46,7 +46,7 @@ function startLL1(rules, inputString) {
         if (nonTerminals.has(t)) {
             const usedRuleIndex = table[t][leftString[0]];
             if (usedRuleIndex === null || usedRuleIndex === undefined)
-                return ['fail', steps];
+                return ['fail', steps, [nonTerminals, terminals, table]];
             getReversedRightHand(rules[usedRuleIndex]).forEach(token => {
                 stack.push(token);
             });
@@ -54,12 +54,12 @@ function startLL1(rules, inputString) {
         }
         else {
             const s = leftString.shift();
-            if (t !== s) return ['fail', steps];
+            if (t !== s) return ['fail', steps, [nonTerminals, terminals, table]];
             pushStep(stack, leftString, -1, 'get next');
         }
     }
 
-    return [undefined, steps];
+    return [undefined, steps, [nonTerminals, terminals, table]];
 
 
     function getFirstS() {
@@ -153,3 +153,20 @@ function startLL1(rules, inputString) {
         //     usedRuleIndex === -1 ? '' : rules[usedRuleIndex], actionString);
     }
 }
+
+
+// const rules =
+// `E->TG
+// G->+TG
+// G->-TG
+// G->
+// T->FS
+// S->*FS
+// S->/FS
+// S->
+// F->(E)
+// F->i`;
+
+// input = 'i+i*i';
+
+// startLL1(rules.split('\n'), input);

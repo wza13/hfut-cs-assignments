@@ -1,3 +1,4 @@
+
 /**
  * @param {Array<String>} rules
  * @param {String} inputString
@@ -8,7 +9,7 @@ function startLR1(rules, inputString) {
         inputString = inputString + '#';
     if (!checkRules(rules)) {
 
-        return ['format', []];
+        return ['format', [], []];
     }
 
     const originStart = rules[0][0];
@@ -25,7 +26,7 @@ function startLR1(rules, inputString) {
     // console.log(nonTerminals);
     // console.log(terminals);
     // console.log(nullables);
-    // return [undefined, steps];
+    // return [undefined, steps, []];
 
     const first = getFirst(rules, nonTerminals, terminals, nullables);
     const follow = getFollow(rules, nonTerminals, terminals, nullables, first);
@@ -33,11 +34,11 @@ function startLR1(rules, inputString) {
     // // test
     // console.dir(first);
     // console.dir(follow);
-    // return [undefined, steps];
+    // return [undefined, steps, []];
 
     const [actionTable, gotoTable, itemSets, hasConflicts] = getTable();
     if (hasConflicts)
-        return ['notLR1', steps];
+        return ['notLR1', steps, []];
 
     // // test
     // console.log('项目集族')
@@ -47,7 +48,7 @@ function startLR1(rules, inputString) {
     // console.log('goto表')
     // console.dir(gotoTable);
     // console.log('是否有冲突', hasConflicts);
-    // return;
+    // return [undefined, steps, []];
 
     while (true) {
         steps.push({
@@ -60,7 +61,7 @@ function startLR1(rules, inputString) {
         const status = statusStack[statusStack.length - 1];
         if (actionTable[status][token] === undefined) {
             steps[steps.length - 1].action = '分析失败';
-            return ['fail', steps];
+            return ['fail', steps, [nonTerminals, terminals, actionTable, gotoTable, itemSets.size]];
         }
         else if (actionTable[status][token][0] === 's') {
             leftString.shift();
@@ -83,14 +84,14 @@ function startLR1(rules, inputString) {
             const pushingStatus = gotoTable[currStatus][reduction];
             if (pushingStatus === undefined) {
                 steps[steps.length - 1].action = '分析失败';
-                return ['fail', steps];
+                return ['fail', steps, [nonTerminals, terminals, actionTable, gotoTable, itemSets.length]];
             }
             statusStack.push(pushingStatus);
             steps[steps.length - 1].action = `规约，状态${pushingStatus}入栈`;
         }
         else /* if (actionTable[status][token].toLowerCase() === 'accept') */ {
             steps[steps.length - 1].action = '分析成功';
-            return [undefined, steps];
+            return [undefined, steps, [nonTerminals, terminals, actionTable, gotoTable, itemSets.length]];
         }
     }
 
@@ -288,3 +289,12 @@ function startLR1(rules, inputString) {
         }
     }
 }
+
+// const rules =
+// `S->BB
+// B->aB
+// B->b`;
+
+// const input = 'aabb';
+
+// startLR1(rules.split('\n'), input);
