@@ -68,7 +68,7 @@
                 <th scope="col">状态栈</th>
                 <th scope="col">符号栈</th>
                 <th scope="col">剩余串</th>
-                <th scope="col">动作</th>
+                <th align="center" scope="col">动作</th>
               </tr>
             </thead>
             <tbody>
@@ -76,27 +76,27 @@
                 <td>{{step.statusStack}}</td>
                 <td>{{step.tokenStack}}</td>
                 <td>{{step.leftString}}</td>
-                <td>{{step.action}}</td>
+                <td align="center">{{step.action}}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <div class="row" v-if="nonTerminals && terminals && table">
+      <div class="row" v-if="itemSetIds.length">
         <div class="col">
           <table class="table">
             <thead>
               <tr>
-                <th scope="col"></th>
-                <th scope="col" v-for="terminal in terminals">{{terminal}}</th>
+                <th scope="col" :class="actionTableWidth">ACTION</th>
+                <th scope="col" :class="actionTableWidth" v-for="terminal in terminals">{{terminal}}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="nonTerminal in Object.keys(table)">
-                <td><b>{{nonTerminal}}</b></td>
-                <td v-for="rule in table[nonTerminal]">
-                  {{rule}}
+              <tr v-for="itemSetId in itemSetIds">
+                <th scope="row" :class="actionTableWidth">{{itemSetId}}</th>
+                <td :class="actionTableWidth" v-for="terminal in terminals">
+                  {{actionTable[itemSetId][terminal]}}
                 </td>
               </tr>
             </tbody>
@@ -104,20 +104,20 @@
         </div>
       </div>
 
-      <div class="row" v-if="nonTerminals && terminals && table">
+      <div class="row" v-if="itemSetIds.length">
         <div class="col">
           <table class="table">
             <thead>
               <tr>
-                <th scope="col"></th>
-                <th scope="col" v-for="terminal in terminals">{{terminal}}</th>
+                <th scope="col" :class="gotoTableWidth">GOTO</th>
+                <th scope="col" :class="gotoTableWidth" v-for="nonTerminal in nonTerminals">{{nonTerminal}}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="nonTerminal in Object.keys(table)">
-                <td><b>{{nonTerminal}}</b></td>
-                <td v-for="rule in table[nonTerminal]">
-                  {{rule}}
+              <tr v-for="itemSetId in itemSetIds">
+                <th scope="row" :class="gotoTableWidth">{{itemSetId}}</th>
+                <td :class="gotoTableWidth" v-for="nonTerminal in nonTerminals">
+                  {{gotoTable[itemSetId][nonTerminal]}}
                 </td>
               </tr>
             </tbody>
@@ -152,7 +152,7 @@ B->b`,
       terminals: null,
       actionTable: null,
       gotoTable: null,
-      itemSetsSize: 0,
+      itemSetIds: [],
       errorMsg: '',
     },
 
@@ -160,6 +160,12 @@ B->b`,
       btnState() {
         return this.isAccepted ? 'btn-success' :
           (this.isAccepted === null ? 'btn-primary' : 'btn-danger');
+      },
+      actionTableWidth() {
+        return `col-${12 / (this.terminals.size + 1)}`;
+      },
+      gotoTableWidth() {
+        return `col-${12 / (this.nonTerminals.size + 1)}`;
       },
     },
 
@@ -173,15 +179,23 @@ B->b`,
         const [errorMsg, steps, info] = startLR1(rules, inputString);
         this.steps = steps;
 
-        if (errorMsg === undefined) {
-          this.isAccepted = true;
-          [this.nonTerminals, this.terminals, this.actionTable, this.gotoTable, this.itemSetsSize,
+        if (errorMsg === undefined || errorMsg === 'fail') {
+          [nonTerminals, this.terminals, this.actionTable, this.gotoTable, itemSetsSize,
             ...rest] = info;
-        }
-        else if (errorMsg === 'fail') {
-          this.isAccepted = false;
-          [this.nonTerminals, this.terminals, this.actionTable, this.gotoTable, this.itemSetsSize,
-            ...rest] = info;
+          for (const nonTerminal of nonTerminals) {
+            if (nonTerminal[nonTerminal.length - 1] === "'") {
+              nonTerminals.delete(nonTerminal);
+              break;
+            }
+          }
+          const itemSetIds = [];
+          for (let i = 0; i < itemSetsSize; ++ i) {
+            itemSetIds.push(String(i));
+          }
+          this.nonTerminals = nonTerminals;
+          this.itemSetIds = itemSetIds;
+          if (errorMsg === undefined) this.isAccepted = true;
+          else this.isAccepted = false;
         }
         else if (errorMsg === 'format' || errorMsg === 'notLR1') {
           this.isAccepted = null;
@@ -189,7 +203,7 @@ B->b`,
           this.terminals = null;
           this.actionTable = null;
           this.gotoTable = null;
-          this.itemSetsSize = 0;
+          this.itemSetIds = [];
           this.errorMsg = errorMsg === 'format' ? '输入格式错误' : '非LR(1)文法'
           $('#exampleModal').modal('show');
         }

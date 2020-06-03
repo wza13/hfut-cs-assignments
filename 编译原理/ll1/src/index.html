@@ -88,14 +88,14 @@
           <table class="table">
             <thead>
               <tr>
-                <th scope="col"></th>
-                <th scope="col" v-for="terminal in terminals">{{terminal}}</th>
+                <th scope="col" :class="tableWidth"></th>
+                <th scope="col":class="tableWidth" v-for="terminal in terminals">{{terminal}}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="nonTerminal in Object.keys(table)">
-                <td><b>{{nonTerminal}}</b></td>
-                <td v-for="rule in table[nonTerminal]">
+                <th :class="tableWidth" scope="row">{{nonTerminal}}</th>
+                <td :class="tableWidth" v-for="rule in table[nonTerminal]">
                   {{rule}}
                 </td>
               </tr>
@@ -151,6 +151,9 @@ F->i`,
       btnState() {
         return this.isAccepted ? 'btn-success' :
           (this.isAccepted === null ? 'btn-primary' : 'btn-danger');
+      },
+      tableWidth() {
+        return `col-${12 / (this.terminals.size + 1)}`;
       },
     },
 
