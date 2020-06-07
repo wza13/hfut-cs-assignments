@@ -294,7 +294,15 @@ function startLR1(rules, inputString) {
 // `S->BB
 // B->aB
 // B->b`;
-
 // const input = 'aabb';
+
+// const rules =
+// `E->E+T
+// E->T
+// T->T*F
+// T->F
+// F->(E)
+// F->i`;
+// const input = 'i*i';
 
 // startLR1(rules.split('\n'), input);
