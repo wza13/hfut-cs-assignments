@@ -25,6 +25,7 @@ target
 bin
 out
 dependency-reduced-pom.xml
+__pycache__
 
 # IDE
 *.iml
