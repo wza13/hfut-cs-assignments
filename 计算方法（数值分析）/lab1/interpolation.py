@@ -1,10 +1,9 @@
 # import math
-import numpy as np
+# import numpy as np
 
 
 def lagrange(f, xs, x):
-    ys = np.array(xs)
-    ys = np.apply_along_axis(f, 0, ys)
+    ys = [f(i) for i in xs]
     n = len(xs)
     y = 0
     for k in range(0, n):
@@ -44,14 +43,14 @@ def newtown(f, xs, x):
 
 
 def piecewise_linear(f, xs, x):
-    xs.sort()
+    interval = [0, 1]
     if x < xs[0]:
         interval = [xs[0], xs[1]]
     elif x > xs[-1]:
         interval = [xs[-2], xs[-1]]
     else:
         for i in range(len(xs) - 1):
-            if x > xs[i] and x < xs[i + 1]:
+            if x >= xs[i] and x <= xs[i + 1]:
                 interval = [xs[i], xs[i + 1]]
                 break
 

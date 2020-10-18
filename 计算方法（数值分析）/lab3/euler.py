@@ -21,6 +21,7 @@ def improved_euler(f, x0, y0, n, h):
     while i <= n:
         x1 = x0 + h
         y1_ = y0 + h * f(x0, y0)
+        # print(n, y1_, y0 + h * (y1_ - 2 * x1 / y1_))
         y1 = y0 + h / 2 * (f(x0, y0) + f(x1, y1_))
         x.append(x1)
         y.append(y1)

@@ -1,6 +1,8 @@
+# %%
 import ast
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 # from lab1.interpolation import lagrange, newtown, piecewise_linear
 from interpolation import lagrange, newtown, piecewise_linear
 
@@ -9,6 +11,7 @@ def main():
     problem1()
     print()
     problem2()
+    runge_phenomenon()
 
 
 def problem1():
@@ -24,7 +27,13 @@ def problem1():
         true_val = f(x)
         la = lagrange(f, xs, x)
         pl = piecewise_linear(f, xs, x)
-        print(x, true_val, la, pl, true_val - la, true_val - pl, sep="\t")
+        print(x,
+              format(true_val, ".6f"),
+              format(la, ".6f"),
+              format(pl, ".6f"),
+              format(true_val - la, ".6f"),
+              format(true_val - pl, ".6f"),
+              sep="\t")
 
 
 def problem2():
@@ -36,7 +45,35 @@ def problem2():
     for x in pred:
         true_val = f(x)
         nt = newtown(f, xs, x)
-        print(x, true_val, nt, true_val - nt, sep="\t")
+        print(x,
+              format(true_val, ".6f"),
+              format(nt, ".6f"),
+              format(true_val - nt, ".6f"),
+              sep="\t")
+
+
+def runge_phenomenon():
+    f = lambda x: 1 / (1 + x * x)
+    xs_10 = np.linspace(-5, 5, 11)
+    xs_5 = np.linspace(-5, 5, 6)
+    xx = np.linspace(-5, 5, 501)
+    y_original = [1 / (1 + i * i) for i in xx]
+    y_piecewise_linear = []
+    y_lag_p5 = []
+    y_lag_p10 = []
+    for i in xx:
+        y_piecewise_linear.append(piecewise_linear(f, xs_10, i))
+        y_lag_p5.append(lagrange(f, xs_5, i))
+        y_lag_p10.append(lagrange(f, xs_10, i))
+    plt.plot(xx, y_original)
+    plt.plot(xx, y_piecewise_linear)
+    plt.plot(xx, y_lag_p5)
+    plt.plot(xx, y_lag_p10)
+    plt.legend(
+        ["Original", "Piecewise Linear", "Lagrange: p5", "Lagrange: p10"])
+    plt.show()
 
 
 main()
+
+# %%
