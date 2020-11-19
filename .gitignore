@@ -1,3 +1,5 @@
+*2018211991*
+
 # Operating System Files
 *.DS_Store
 Thumbs.db
@@ -50,3 +52,7 @@ node_modules
 *.zip
 *.rar
 *.tar.gz
+
+
+#calab
+!WinMIPS64.rar
