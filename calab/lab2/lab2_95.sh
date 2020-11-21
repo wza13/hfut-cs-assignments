@@ -27,14 +27,17 @@ arg=(
 
 rm lab2_95.out
 rm temp/lab2_95.out
+cp ../benchmark/spec95_little/input.log.bak ../benchmark/spec95_little/input.log
 
 for (( i = 0 ; i < ${#exe[@]} ; i++ ))
 do
     for (( j = 0 ; j < ${#opt[@]} ; j++ ))
     do
         # out of no reason compress95 will delete input.log after using it when run this command in shell script
-        rm ../benchmark/spec95_little/input.log.Z
-        cp ../benchmark/spec95_little/input.log.bak ../benchmark/spec95_little/input.log
+        if [ -f ../benchmark/spec95_little/input.log.Z ]; then
+            rm ../benchmark/spec95_little/input.log.Z
+            cp ../benchmark/spec95_little/input.log.bak ../benchmark/spec95_little/input.log
+        fi
         echo "./../sim-bpred -bpred${opt[$j]} ../benchmark/spec95_little/${exe[$i]}.alpha ${arg[$i]} >> temp/lab2_95.out 2>> lab2_95.out"
         ./../sim-bpred -bpred${opt[$j]} ../benchmark/spec95_little/${exe[$i]}.alpha ${arg[$i]} >> temp/lab2_95.out 2>> lab2_95.out
     done
