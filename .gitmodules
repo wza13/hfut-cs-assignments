@@ -1,0 +1,8 @@
+[submodule "计算机网络"]
+    path = "计算机网络"
+    url = "https://github.com/wine99/UDP-based-reliable-data-transfer.git"
+
+[submodule "How-to-install-SimpleScalar-on-Ubuntu"]
+    path = "计算机体系结构/How-to-install-SimpleScalar-on-Ubuntu"
+    url = "https://github.com/sdenel/How-to-install-SimpleScalar-on-Ubuntu.git"
+
