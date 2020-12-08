@@ -1,0 +1,31 @@
+F:/code/verilog/exp2/alu.v {1 {vlog -work work -vopt F:/code/verilog/exp2/alu.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module alu
+
+Top level modules:
+	alu
+
+} {} {}} F:/code/verilog/exp2/reg_file_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp2/reg_file_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module reg_file_tb
+
+Top level modules:
+	reg_file_tb
+
+} {} {}} F:/code/verilog/exp2/alu_tb.v {2 {vlog -work work -vopt F:/code/verilog/exp2/alu_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module alu_tb
+** Warning: F:/code/verilog/exp2/alu_tb.v(23): (vlog-2600) [RDGN] - Redundant digits in numeric literal.
+
+
+Top level modules:
+	alu_tb
+
+} {} {}} F:/code/verilog/exp2/reg_file.v {1 {vlog -work work -vopt F:/code/verilog/exp2/reg_file.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module reg_file
+
+Top level modules:
+	reg_file
+
+} {} {}}

@@ -1,0 +1,43 @@
+F:/code/verilog/exp1/fulladder4.v {1 {vlog -work work -vopt F:/code/verilog/exp1/fulladder4.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module fulladder4
+
+Top level modules:
+	fulladder4
+
+} {} {}} F:/code/verilog/exp1/mux41.v {1 {vlog -work work -vopt F:/code/verilog/exp1/mux41.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module mux41
+
+Top level modules:
+	mux41
+
+} {} {}} F:/code/verilog/exp1/comparator8.v {1 {vlog -work work -vopt F:/code/verilog/exp1/comparator8.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module comparator8
+
+Top level modules:
+	comparator8
+
+} {} {}} F:/code/verilog/exp1/fulladder4_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp1/fulladder4_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module fulladde4_tb
+
+Top level modules:
+	fulladde4_tb
+
+} {} {}} F:/code/verilog/exp1/mux41_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp1/mux41_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module mux41_tb
+
+Top level modules:
+	mux41_tb
+
+} {} {}} F:/code/verilog/exp1/decoder38.v {1 {vlog -work work -vopt F:/code/verilog/exp1/decoder38.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module decoder38
+
+Top level modules:
+	decoder38
+
+} {} {}}

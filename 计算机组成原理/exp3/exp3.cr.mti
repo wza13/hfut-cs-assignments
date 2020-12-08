@@ -1,0 +1,29 @@
+F:/code/verilog/exp3/ram_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp3/ram_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module ram_tb
+
+Top level modules:
+	ram_tb
+
+} {} {}} F:/code/verilog/exp3/pc.v {1 {vlog -work work -vopt F:/code/verilog/exp3/pc.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module pc
+
+Top level modules:
+	pc
+
+} {} {}} F:/code/verilog/exp3/pc_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp3/pc_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module pc_tb
+
+Top level modules:
+	pc_tb
+
+} {} {}} F:/code/verilog/exp3/ram.v {1 {vlog -work work -vopt F:/code/verilog/exp3/ram.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module ram
+
+Top level modules:
+	ram
+
+} {} {}}

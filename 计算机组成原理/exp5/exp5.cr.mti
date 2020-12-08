@@ -1,0 +1,57 @@
+F:/code/verilog/exp5/insMemory.v {1 {vlog -work work -vopt F:/code/verilog/exp5/insMemory.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module insMemory
+
+Top level modules:
+	insMemory
+
+} {} {}} F:/code/verilog/exp5/pc.v {1 {vlog -work work -vopt F:/code/verilog/exp5/pc.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module pc
+
+Top level modules:
+	pc
+
+} {} {}} F:/code/verilog/exp5/dataMemory.v {1 {vlog -work work -vopt F:/code/verilog/exp5/dataMemory.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module dataMemory
+
+Top level modules:
+	dataMemory
+
+} {} {}} F:/code/verilog/exp5/acc.v {1 {vlog -work work -vopt F:/code/verilog/exp5/acc.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module acc
+
+Top level modules:
+	acc
+
+} {} {}} F:/code/verilog/exp5/cu.v {1 {vlog -work work -vopt F:/code/verilog/exp5/cu.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module cu
+
+Top level modules:
+	cu
+
+} {} {}} F:/code/verilog/exp5/cpu.v {1 {vlog -work work -vopt F:/code/verilog/exp5/cpu.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module cpu
+
+Top level modules:
+	cpu
+
+} {} {}} F:/code/verilog/exp5/cpu_tb.v {1 {vlog -work work -vopt F:/code/verilog/exp5/cpu_tb.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module cpu_tb
+
+Top level modules:
+	cpu_tb
+
+} {} {}} F:/code/verilog/exp5/alu.v {1 {vlog -work work -vopt F:/code/verilog/exp5/alu.v
+Model Technology ModelSim SE vlog 10.1a Compiler 2012.02 Feb 22 2012
+-- Compiling module alu
+
+Top level modules:
+	alu
+
+} {} {}}
