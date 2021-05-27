@@ -6,3 +6,6 @@
     path = "计算机体系结构/How-to-install-SimpleScalar-on-Ubuntu"
     url = "https://github.com/sdenel/How-to-install-SimpleScalar-on-Ubuntu.git"
 
+[submodule "计算机图形学"]
+    path = "计算机图形学"
+    url = "https://github.com/wine99/hfut-cg.git"
